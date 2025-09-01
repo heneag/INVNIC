@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Roboto', sans-serif; padding: 15px; background: #f7f7f7; }
+    h3, h4 { margin: 10px 0; color: #333; }
+    input, select, button { margin: 5px 0; padding: 8px; width: 100%; border-radius: 4px; border: 1px solid #ccc; }
+    button { cursor: pointer; background: #007bff; color: white; border: none; }
+    button:hover { background: #0056b3; }
+    .card { background: white; border-radius: 5px; padding: 10px; margin: 5px 0; border-left: 5px solid #007bff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: pointer; transition: 0.2s; }
+    .card:hover { box-shadow: 0 3px 8px rgba(0,0,0,0.2); }
+    .selected { border-left-color: #28a745; background: #e9ffe9; }
+    #resultados .form-group { margin: 10px 0; }
+    #log table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    #log th, #log td { border: 1px solid #ddd; padding: 6px; text-align: left; }
+    #log th { background: #007bff; color: white; }
+    .notification { background: #28a745; color: white; padding: 5px 10px; border-radius: 4px; margin: 5px 0; text-align: center; display: none; }
+  </style>
+</head>
+<body>
+  <h3>🔍 Buscar Producto</h3>
+  <input type="text" id="categoria" placeholder="Categoría">
+  <input type="text" id="marca" placeholder="Marca">
+  <input type="text" id="desc" placeholder="Descripción">
+  <input type="text" id="modelo" placeholder="Modelo">
+  <input type="text" id="sku" placeholder="SKU">
+  <button onclick="buscar()">Buscar</button>
+
+  <div id="coincidencias"></div>
+  <div id="resultados"></div>
+  <div class="notification" id="noti">✅ Inventario actualizado correctamente!</div>
+
+  <h4>📌 Últimos 5 productos contados</h4>
+  <div id="log"></div>
+
+<script>
+let listaResultados = [];
+let productoSeleccionado = null;
+let indice = 0;
+
+function buscar() {
+  const filtros = {
+    categoria: document.getElementById("categoria").value,
+    marca: document.getElementById("marca").value,
+    desc: document.getElementById("desc").value,
+    modelo: document.getElementById("modelo").value,
+    sku: document.getElementById("sku").value
+  };
+
+  google.script.run.withSuccessHandler(mostrarCoincidencias).buscarEnDatos(filtros);
+  google.script.run.withSuccessHandler(mostrarLog).obtenerUltimos5();
+}
+
+function mostrarCoincidencias(lista) {
+  listaResultados = lista;
+  productoSeleccionado = null;
+  indice = 0;
+  const cont = document.getElementById("coincidencias");
+  cont.innerHTML = "";
+  document.getElementById("resultados").innerHTML = "";
+
+  if (lista.length === 0) {
+    cont.innerHTML = "<p>No se encontraron productos</p>";
+    return;
+  }
+
+  if (lista.length === 1) {
+    productoSeleccionado = lista[0];
+    mostrarFormulario();
+    return;
+  }
+
+  lista.forEach((prod, idx) => {
+    const div = document.createElement("div");
+    div.className = "card";
+    div.innerHTML = `<b>${prod.marca}</b> - ${prod.descripcion} (${prod.modelo})<br>SKU: ${prod.sku}`;
+    div.onclick = () => seleccionarProducto(idx);
+    cont.appendChild(div);
+  });
+
+  seleccionarProducto(0);
+}
+
+function seleccionarProducto(idx) {
+  const cards = document.querySelectorAll("#coincidencias .card");
+  cards.forEach((c, i) => c.classList.toggle("selected", i === idx));
+  productoSeleccionado = listaResultados[idx];
+  indice = idx;
+  mostrarFormulario();
+}
+
+function siguiente() {
+  if (indice < listaResultados.length - 1) {
+    seleccionarProducto(indice + 1);
+  } else {
+    alert("No hay más coincidencias.");
+  }
+}
+
+function mostrarFormulario() {
+  const cont = document.getElementById("resultados");
+  const prod = productoSeleccionado;
+  if (!prod) return;
+
+  cont.innerHTML = `
+    <div class="form-group">
+      <b>${prod.marca}</b> - ${prod.descripcion} (${prod.modelo})<br>SKU: ${prod.sku}<br>
+      <input type="number" id="cant" min="1" placeholder="Cantidad">
+      <select id="estado">
+        <option value="SIN">SIN REVISAR</option>
+        <option value="DISPONIBLE">DISPONIBLE</option>
+        <option value="DAÑADO">DAÑADO</option>
+        <option value="DEFECTO">CON DEFECTO</option>
+      </select>
+      <button onclick="guardar(${prod.fila})">Guardar ✅</button>
+      <button onclick="siguiente()">Siguiente ➡️</button>
+    </div>
+  `;
+}
+
+function guardar(fila) {
+  const cantidad = document.getElementById("cant").value;
+  const estado = document.getElementById("estado").value;
+  const prod = productoSeleccionado;
+
+  if (!cantidad || cantidad <= 0) {
+    alert("Ingrese una cantidad válida.");
+    return;
+  }
+
+  google.script.run.withSuccessHandler(function(msg){
+    mostrarNotificacion(msg);
+    limpiarBusqueda();
+    google.script.run.withSuccessHandler(mostrarLog).obtenerUltimos5();
+  }).actualizarInventario(fila, cantidad, estado, prod);
+}
+
+function mostrarNotificacion(msg) {
+  const noti = document.getElementById("noti");
+  noti.innerText = msg;
+  noti.style.display = "block";
+  setTimeout(()=>{noti.style.display="none";}, 2000);
+}
+
+function limpiarBusqueda() {
+  document.getElementById("categoria").value = "";
+  document.getElementById("marca").value = "";
+  document.getElementById("desc").value = "";
+  document.getElementById("modelo").value = "";
+  document.getElementById("sku").value = "";
+  document.getElementById("resultados").innerHTML = "";
+  document.getElementById("coincidencias").innerHTML = "";
+  productoSeleccionado = null;
+  listaResultados = [];
+  indice = 0;
+}
+
+function mostrarLog(lista) {
+  const cont = document.getElementById("log");
+  if (lista.length === 0) {
+    cont.innerHTML = "<p>No hay productos recientes</p>";
+    return;
+  }
+  let html = "<table><tr><th>Fecha</th><th>Cat.</th><th>Marca</th><th>Desc.</th><th>Modelo</th><th>SKU</th><th>Cantidad</th><th>Estado</th></tr>";
+  lista.forEach(item => {
+    html += `<tr><td>${item[0]}</td><td>${item[1]}</td><td>${item[2]}</td><td>${item[3]}</td><td>${item[4]}</td><td>${item[5]}</td><td>${item[6]}</td><td>${item[7]}</td></tr>`;
+  });
+  html += "</table>";
+  cont.innerHTML = html;
+}
+
+google.script.run.withSuccessHandler(mostrarLog).obtenerUltimos5();
+</script>
+</body>
+</html>
