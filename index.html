@@ -1,177 +1,269 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-  <base target="_top">
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-  <style>
-    body { font-family: 'Roboto', sans-serif; padding: 15px; background: #f7f7f7; }
-    h3, h4 { margin: 10px 0; color: #333; }
-    input, select, button { margin: 5px 0; padding: 8px; width: 100%; border-radius: 4px; border: 1px solid #ccc; }
-    button { cursor: pointer; background: #007bff; color: white; border: none; }
-    button:hover { background: #0056b3; }
-    .card { background: white; border-radius: 5px; padding: 10px; margin: 5px 0; border-left: 5px solid #007bff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: pointer; transition: 0.2s; }
-    .card:hover { box-shadow: 0 3px 8px rgba(0,0,0,0.2); }
-    .selected { border-left-color: #28a745; background: #e9ffe9; }
-    #resultados .form-group { margin: 10px 0; }
-    #log table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    #log th, #log td { border: 1px solid #ddd; padding: 6px; text-align: left; }
-    #log th { background: #007bff; color: white; }
-    .notification { background: #28a745; color: white; padding: 5px 10px; border-radius: 4px; margin: 5px 0; text-align: center; display: none; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de Gestión de Inventario</title>
+<base target="_top">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+:root {
+    --primary: #2c6fbb;
+    --primary-dark: #1a56a0;
+    --secondary: #28a745;
+    --secondary-dark: #218838;
+    --warning: #ffc107;
+    --warning-dark: #e0a800;
+    --danger: #dc3545;
+    --danger-dark: #c82333;
+    --light: #f8f9fa;
+    --dark: #343a40;
+    --gray: #6c757d;
+    --light-gray: #e9ecef;
+    --border-radius: 8px;
+    --box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    --transition: all 0.3s ease;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Roboto', sans-serif; background: linear-gradient(135deg,#f5f7fa 0%,#e4e8f0 100%); color:#333; line-height:1.6; min-height:100vh; padding:0; width:100%; overflow-x:hidden; }
+.container { max-width: 100%; margin:0 auto; padding:15px; }
+header { background: var(--primary); color:white; padding:20px; border-radius: var(--border-radius); box-shadow: var(--box-shadow); margin-bottom:20px; position: relative; }
+h1,h2,h3,h4 { margin-bottom:15px; font-weight:600; }
+.card { background:white; border-radius: var(--border-radius); padding:20px; margin-bottom:20px; box-shadow: var(--box-shadow); transition: var(--transition); }
+.card:hover { box-shadow:0 6px 16px rgba(0,0,0,0.15); }
+.search-section { display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-bottom:20px; }
+.form-group { margin-bottom:15px; }
+label { display:block; margin-bottom:8px; font-weight:500; color: var(--dark); }
+input, select, button { width:100%; padding:12px 15px; border:1px solid var(--light-gray); border-radius: var(--border-radius); font-family:'Roboto',sans-serif; font-size:16px; transition: var(--transition); }
+input:focus, select:focus { outline:none; border-color: var(--primary); box-shadow:0 0 0 3px rgba(44,111,187,0.2); }
+button { background: var(--primary); color:white; border:none; cursor:pointer; font-weight:500; display:flex; align-items:center; justify-content:center; gap:8px; }
+button:hover { background: var(--primary-dark); transform: translateY(-2px); }
+button.secondary { background: var(--secondary); }
+button.secondary:hover { background: var(--secondary-dark); }
+button.outline { background: transparent; color: var(--primary); border:1px solid var(--primary); }
+button.outline:hover { background: var(--primary); color:white; }
+.results-container { display:grid; grid-template-columns:1fr 2fr; gap:20px; }
+@media(max-width:968px){.results-container{grid-template-columns:1fr}.search-section{grid-template-columns:1fr}}
+.product-list { max-height:500px; overflow-y:auto; }
+.product-card { padding:15px; margin-bottom:10px; border-left:4px solid var(--primary); background:white; border-radius: var(--border-radius); cursor:pointer; transition: var(--transition); }
+.product-card:hover { transform: translateX(5px); }
+.product-card.selected { border-left-color: var(--secondary); background-color:#f0fff4; }
+.product-detail { padding:20px; }
+.notification { position: fixed; top:20px; right:20px; padding:15px 20px; background: var(--secondary); color:white; border-radius: var(--border-radius); box-shadow: var(--box-shadow); display:none; z-index:1000; animation: slideIn 0.3s ease; max-width:350px; }
+@keyframes slideIn { from { transform:translateX(100px); opacity:0; } to { transform:translateX(0); opacity:1; } }
+.log-section { margin-top:30px; }
+.table-container { overflow-x:auto; margin-top:15px; }
+table { width:100%; border-collapse:collapse; min-width:600px; }
+th,td { padding:12px 15px; text-align:left; border-bottom:1px solid var(--light-gray); }
+th { background-color: var(--primary); color:white; position:sticky; top:0; }
+tr:nth-child(even){background-color:#f8f9fa;}
+tr:hover{background-color:var(--light-gray);}
+.empty-state{text-align:center;padding:40px 20px;color:var(--gray);}
+.empty-state i{font-size:48px;margin-bottom:15px;color:var(--light-gray);}
+.action-buttons{display:flex;gap:10px;margin-top:20px;}
+.action-buttons button{width:auto;flex:1;}
+.badge{display:inline-block;padding:4px 8px;border-radius:20px;font-size:12px;font-weight:500;margin-left:8px;}
+.badge-primary{background: var(--primary); color:white;}
+.badge-secondary{background: var(--secondary); color:white;}
+.section-title{display:flex;align-items:center;gap:10px;margin-bottom:20px;padding-bottom:10px;border-bottom:2px solid var(--light-gray);}
+.section-title i{color: var(--primary);}
+.close-btn{position:absolute;top:15px;right:15px;background:transparent;color:white;border:none;font-size:24px;width:auto;padding:5px;cursor:pointer;}
+.close-btn:hover{background:transparent;color:#ffdddd;transform:none;}
+.estado-buttons{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:20px 0;}
+.estado-btn{padding:20px 15px;border:none;border-radius:var(--border-radius);font-size:18px;font-weight:600;cursor:pointer;transition:var(--transition);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;min-height:90px;}
+.estado-btn i{font-size:24px;margin-bottom:8px;}
+.estado-btn.selected{transform:scale(1.02);box-shadow:0 5px 15px rgba(0,0,0,0.2);}
+.estado-btn.sin{background-color:#6c757d;color:white;}
+.estado-btn.sin:hover,.estado-btn.sin.selected{background-color:#5a6268;}
+.estado-btn.disponible{background-color:var(--secondary);color:white;}
+.estado-btn.disponible:hover,.estado-btn.disponible.selected{background-color:var(--secondary-dark);}
+.estado-btn.danado{background-color:var(--warning);color:#212529;}
+.estado-btn.danado:hover,.estado-btn.danado.selected{background-color:var(--warning-dark);}
+.estado-btn.defecto{background-color:var(--danger);color:white;}
+.estado-btn.defecto:hover,.estado-btn.defecto.selected{background-color:var(--danger-dark);}
+.cantidad-input{font-size:24px;padding:15px;text-align:center;font-weight:bold;}
+.cantidad-controls{display:flex;align-items:center;margin:15px 0;}
+.cantidad-btn{width:50px;height:50px;font-size:24px;font-weight:bold;border:none;border-radius:50%;background:var(--primary);color:white;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.cantidad-value{margin:0 15px;font-size:24px;font-weight:bold;min-width:60px;text-align:center;}
+.search-general{position:relative;margin-bottom:20px;}
+.search-general input{padding-left:45px;font-size:18px;border-radius:30px;}
+.search-general i{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:var(--gray);font-size:20px;}
+.search-suggestions{position:absolute;top:100%;left:0;right:0;background:white;border-radius:var(--border-radius);box-shadow:var(--box-shadow);z-index:100;max-height:300px;overflow-y:auto;display:none;}
+.suggestion-item{padding:12px 15px;cursor:pointer;border-bottom:1px solid var(--light-gray);display:flex;align-items:center;gap:10px;}
+.suggestion-item:hover{background-color:var(--light);}
+.suggestion-item i{color: var(--primary);}
+.search-tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+.search-tag{background:var(--primary);color:white;padding:4px 10px;border-radius:20px;font-size:14px;display:flex;align-items:center;gap:5px;}
+.search-tag i{cursor:pointer;}
+</style>
 </head>
 <body>
-  <h3>🔍 Buscar Producto</h3>
-  <input type="text" id="categoria" placeholder="Categoría">
-  <input type="text" id="marca" placeholder="Marca">
-  <input type="text" id="desc" placeholder="Descripción">
-  <input type="text" id="modelo" placeholder="Modelo">
-  <input type="text" id="sku" placeholder="SKU">
-  <button onclick="buscar()">Buscar</button>
+<div class="container">
+  <header>
+    <h1>Sistema de Gestión de Inventario</h1>
+  </header>
 
-  <div id="coincidencias"></div>
-  <div id="resultados"></div>
-  <div class="notification" id="noti">✅ Inventario actualizado correctamente!</div>
+  <div class="search-section card">
+    <div class="form-group">
+      <label for="categoria">Categoría</label>
+      <input type="text" id="categoria" placeholder="Ej: Electrodomésticos">
+    </div>
+    <div class="form-group">
+      <label for="marca">Marca</label>
+      <input type="text" id="marca" placeholder="Ej: Samsung">
+    </div>
+    <div class="form-group">
+      <label for="desc">Descripción</label>
+      <input type="text" id="desc" placeholder="Ej: Monitor 32''">
+    </div>
+    <div class="form-group">
+      <label for="modelo">Modelo</label>
+      <input type="text" id="modelo" placeholder="Ej: ABC123">
+    </div>
+    <div class="form-group">
+      <label for="sku">SKU</label>
+      <input type="text" id="sku" placeholder="Ej: 123456">
+    </div>
+    <button onclick="buscar()">Buscar <i class="fas fa-search"></i></button>
+  </div>
 
-  <h4>📌 Últimos 5 productos contados</h4>
-  <div id="log"></div>
+  <div class="results-container">
+    <div class="product-list card" id="product-list">
+      <div class="empty-state" id="empty-state">
+        <i class="fas fa-box-open"></i>
+        <p>No hay productos para mostrar.</p>
+      </div>
+    </div>
+    <div class="product-detail card" id="product-detail">
+      <h3>Detalle del producto</h3>
+      <p>Selecciona un producto para ver sus detalles.</p>
+    </div>
+  </div>
+
+  <div class="log-section card">
+    <h3>Registro de actividad</h3>
+    <div class="table-container">
+      <table id="log-table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Usuario</th>
+            <th>Acción</th>
+            <th>Detalle</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="4">No hay registros.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="notification" id="notification"></div>
 
 <script>
-let listaResultados = [];
+const webAppUrl = "TU_URL_WEBAPP"; // <-- reemplazar con la URL de tu Web App
+
 let productoSeleccionado = null;
-let indice = 0;
 
-function buscar() {
-  const filtros = {
-    categoria: document.getElementById("categoria").value,
-    marca: document.getElementById("marca").value,
-    desc: document.getElementById("desc").value,
-    modelo: document.getElementById("modelo").value,
-    sku: document.getElementById("sku").value
-  };
-
-  google.script.run.withSuccessHandler(mostrarCoincidencias).buscarEnDatos(filtros);
-  google.script.run.withSuccessHandler(mostrarLog).obtenerUltimos5();
+function mostrarNotificacion(msg) {
+  const notif = document.getElementById('notification');
+  notif.innerText = msg;
+  notif.style.display = 'block';
+  setTimeout(()=>{ notif.style.display='none'; },3000);
 }
 
-function mostrarCoincidencias(lista) {
-  listaResultados = lista;
-  productoSeleccionado = null;
-  indice = 0;
-  const cont = document.getElementById("coincidencias");
-  cont.innerHTML = "";
-  document.getElementById("resultados").innerHTML = "";
-
-  if (lista.length === 0) {
-    cont.innerHTML = "<p>No se encontraron productos</p>";
+function mostrarCoincidencias(productos){
+  const list = document.getElementById('product-list');
+  const empty = document.getElementById('empty-state');
+  list.innerHTML = "";
+  if(!productos || productos.length===0){
+    empty.style.display="block";
     return;
   }
-
-  if (lista.length === 1) {
-    productoSeleccionado = lista[0];
-    mostrarFormulario();
-    return;
-  }
-
-  lista.forEach((prod, idx) => {
-    const div = document.createElement("div");
-    div.className = "card";
-    div.innerHTML = `<b>${prod.marca}</b> - ${prod.descripcion} (${prod.modelo})<br>SKU: ${prod.sku}`;
-    div.onclick = () => seleccionarProducto(idx);
-    cont.appendChild(div);
+  empty.style.display="none";
+  productos.forEach((p,i)=>{
+    const div = document.createElement('div');
+    div.className="product-card";
+    div.innerHTML=`<strong>${p.desc}</strong> <span class="badge badge-primary">${p.sku}</span>`;
+    div.onclick=()=>seleccionarProducto(p,div);
+    list.appendChild(div);
   });
-
-  seleccionarProducto(0);
 }
 
-function seleccionarProducto(idx) {
-  const cards = document.querySelectorAll("#coincidencias .card");
-  cards.forEach((c, i) => c.classList.toggle("selected", i === idx));
-  productoSeleccionado = listaResultados[idx];
-  indice = idx;
-  mostrarFormulario();
-}
-
-function siguiente() {
-  if (indice < listaResultados.length - 1) {
-    seleccionarProducto(indice + 1);
-  } else {
-    alert("No hay más coincidencias.");
-  }
-}
-
-function mostrarFormulario() {
-  const cont = document.getElementById("resultados");
-  const prod = productoSeleccionado;
-  if (!prod) return;
-
-  cont.innerHTML = `
+function seleccionarProducto(p,div){
+  productoSeleccionado = p;
+  document.querySelectorAll('.product-card').forEach(c=>c.classList.remove('selected'));
+  div.classList.add('selected');
+  const detail = document.getElementById('product-detail');
+  detail.innerHTML=`
+    <h3>${p.desc}</h3>
+    <p><strong>SKU:</strong> ${p.sku}</p>
+    <p><strong>Categoría:</strong> ${p.categoria}</p>
+    <p><strong>Marca:</strong> ${p.marca}</p>
+    <p><strong>Modelo:</strong> ${p.modelo}</p>
     <div class="form-group">
-      <b>${prod.marca}</b> - ${prod.descripcion} (${prod.modelo})<br>SKU: ${prod.sku}<br>
-      <input type="number" id="cant" min="1" placeholder="Cantidad">
-      <select id="estado">
-        <option value="SIN">SIN REVISAR</option>
-        <option value="DISPONIBLE">DISPONIBLE</option>
-        <option value="DAÑADO">DAÑADO</option>
-        <option value="DEFECTO">CON DEFECTO</option>
-      </select>
-      <button onclick="guardar(${prod.fila})">Guardar ✅</button>
-      <button onclick="siguiente()">Siguiente ➡️</button>
+      <label for="cant">Cantidad</label>
+      <input type="number" id="cant" value="1">
     </div>
+    <div class="form-group">
+      <label for="estado">Estado</label>
+      <select id="estado">
+        <option value="Disponible">Disponible</option>
+        <option value="Dañado">Dañado</option>
+        <option value="Defecto">Defecto</option>
+      </select>
+    </div>
+    <button onclick="guardar(${p.row})">Guardar <i class="fas fa-save"></i></button>
   `;
 }
 
-function guardar(fila) {
-  const cantidad = document.getElementById("cant").value;
-  const estado = document.getElementById("estado").value;
-  const prod = productoSeleccionado;
-
-  if (!cantidad || cantidad <= 0) {
-    alert("Ingrese una cantidad válida.");
-    return;
-  }
-
-  google.script.run.withSuccessHandler(function(msg){
-    mostrarNotificacion(msg);
-    limpiarBusqueda();
-    google.script.run.withSuccessHandler(mostrarLog).obtenerUltimos5();
-  }).actualizarInventario(fila, cantidad, estado, prod);
-}
-
-function mostrarNotificacion(msg) {
-  const noti = document.getElementById("noti");
-  noti.innerText = msg;
-  noti.style.display = "block";
-  setTimeout(()=>{noti.style.display="none";}, 2000);
-}
-
-function limpiarBusqueda() {
-  document.getElementById("categoria").value = "";
-  document.getElementById("marca").value = "";
-  document.getElementById("desc").value = "";
-  document.getElementById("modelo").value = "";
-  document.getElementById("sku").value = "";
-  document.getElementById("resultados").innerHTML = "";
-  document.getElementById("coincidencias").innerHTML = "";
-  productoSeleccionado = null;
-  listaResultados = [];
-  indice = 0;
-}
-
-function mostrarLog(lista) {
-  const cont = document.getElementById("log");
-  if (lista.length === 0) {
-    cont.innerHTML = "<p>No hay productos recientes</p>";
-    return;
-  }
-  let html = "<table><tr><th>Fecha</th><th>Cat.</th><th>Marca</th><th>Desc.</th><th>Modelo</th><th>SKU</th><th>Cantidad</th><th>Estado</th></tr>";
-  lista.forEach(item => {
-    html += `<tr><td>${item[0]}</td><td>${item[1]}</td><td>${item[2]}</td><td>${item[3]}</td><td>${item[4]}</td><td>${item[5]}</td><td>${item[6]}</td><td>${item[7]}</td></tr>`;
+async function buscar(){
+  const params = new URLSearchParams({
+    action:'buscar',
+    categoria: document.getElementById('categoria').value,
+    marca: document.getElementById('marca').value,
+    desc: document.getElementById('desc').value,
+    modelo: document.getElementById('modelo').value,
+    sku: document.getElementById('sku').value
   });
-  html += "</table>";
-  cont.innerHTML = html;
+  const res = await fetch(webAppUrl + "?" + params.toString());
+  const data = await res.json();
+  mostrarCoincidencias(data.data);
+  actualizarLog();
 }
 
-google.script.run.withSuccessHandler(mostrarLog).obtenerUltimos5();
+async function guardar(row){
+  if(!productoSeleccionado){ mostrarNotificacion("Selecciona un producto primero"); return; }
+  const cantidad = document.getElementById('cant').value;
+  const estado = document.getElementById('estado').value;
+  const res = await fetch(webAppUrl,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({action:'update', fila:row, cantidad, estado, producto: productoSeleccionado})
+  });
+  const data = await res.json();
+  mostrarNotificacion(data.message);
+  buscar();
+}
+
+async function actualizarLog(){
+  const res = await fetch(webAppUrl + "?action=log");
+  const data = await res.json();
+  const tbody = document.querySelector("#log-table tbody");
+  tbody.innerHTML = "";
+  if(!data.data || data.data.length===0){
+    tbody.innerHTML="<tr><td colspan='4'>No hay registros.</td></tr>";
+    return;
+  }
+  data.data.forEach(r=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML=`<td>${r.fecha}</td><td>${r.usuario}</td><td>${r.accion}</td><td>${r.detalle}</td>`;
+    tbody.appendChild(tr);
+  });
+}
 </script>
 </body>
 </html>
