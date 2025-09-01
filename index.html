@@ -220,7 +220,7 @@ function seleccionarProducto(p,div){
   `;
 }
 
-async function buscar(){
+async function buscar() {
   const params = new URLSearchParams({
     action:'buscar',
     categoria: document.getElementById('categoria').value,
@@ -229,11 +229,14 @@ async function buscar(){
     modelo: document.getElementById('modelo').value,
     sku: document.getElementById('sku').value
   });
+  
   const res = await fetch(webAppUrl + "?" + params.toString());
   const data = await res.json();
+  console.log("Datos recibidos:", data); // <-- revisar aquí
   mostrarCoincidencias(data.data);
   actualizarLog();
 }
+
 
 async function guardar(row){
   if(!productoSeleccionado){ mostrarNotificacion("Selecciona un producto primero"); return; }
